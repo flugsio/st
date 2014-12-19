@@ -58,7 +58,7 @@ static const char *colorname[] = {
 	/* gruvbox dark
 	 * https://github.com/morhetz/gruvbox
 	 * https://github.com/morhetz/gruvbox-generalized */
-	"#282828",
+	"#222222",
 	"#cc241d",
 	"#98971a",
 	"#fe8019",
@@ -78,7 +78,7 @@ static const char *colorname[] = {
 	[255] = 0,
 
 	/* more colors can be added after 255 to use with DefaultXX */
-	"#cccccc",
+	"#22bb33",
 };
 
 
