@@ -126,7 +126,7 @@ typedef struct {
 
 static inline ushort sixd_to_16bit(int);
 static int xmakeglyphfontspecs(XftGlyphFontSpec *, const Glyph *, int, int, int);
-static void xdrawglyphfontspecs(const XftGlyphFontSpec *, Glyph, int, int, int);
+static void xdrawglyphfontspecs(XftGlyphFontSpec *, Glyph, int, int, int);
 static void xdrawglyph(Glyph, int, int);
 static void xclear(int, int, int, int);
 static void xdrawcursor(void);
@@ -1244,14 +1244,22 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 }
 
 void
-xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, int y)
+xdrawglyphfontspecs(XftGlyphFontSpec *specs, Glyph base, int len, int x, int y)
 {
 	int charlen = len * ((base.mode & ATTR_WIDE) ? 2 : 1);
+        int shadowx = 1, shadowy = 1;
 	int winx = borderpx + x * win.cw, winy = borderpx + y * win.ch,
-	    width = charlen * win.cw;
-	Color *fg, *bg, *temp, revfg, revbg, truefg, truebg;
-	XRenderColor colfg, colbg;
+	    width = charlen * win.cw + shadowx,
+            height = win.ch + shadowy;
+	Color *fg, *bg, *temp, revfg, revbg, truefg, truebg, shadow;
+	XRenderColor colfg, colbg, colshadow;
 	XRectangle r;
+
+        colshadow.alpha = 0xffff;
+        colshadow.red = 0x03;
+        colshadow.green = 0x03;
+        colshadow.blue = 0x03;
+        XftColorAllocValue(xw.dpy, xw.vis, xw.cmap, &colshadow, &shadow);
 
 	/* Fallback on color display for attributes not supported by the font */
 	if (base.mode & ATTR_ITALIC && base.mode & ATTR_BOLD) {
@@ -1338,26 +1346,41 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 	/* Intelligent cleaning up of the borders. */
 	if (x == 0) {
 		xclear(0, (y == 0)? 0 : winy, borderpx,
-			winy + win.ch + ((y >= term.row-1)? win.h : 0));
+			winy + height + ((y >= term.row-1)? win.h : 0));
 	}
 	if (x + charlen >= term.col) {
 		xclear(winx + width, (y == 0)? 0 : winy, win.w,
-			((y >= term.row-1)? win.h : (winy + win.ch)));
+			((y >= term.row-1)? win.h : (winy + height)));
 	}
 	if (y == 0)
 		xclear(winx, 0, winx + width, borderpx);
 	if (y == term.row-1)
-		xclear(winx, winy + win.ch, winx + width, win.h);
+		xclear(winx, winy + height, winx + width, win.h);
 
 	/* Clean up the region we want to draw to. */
-	XftDrawRect(xw.draw, bg, winx, winy, width, win.ch);
+	XftDrawRect(xw.draw, bg, winx, winy, width, height);
 
 	/* Set the clip region because Xft is sometimes dirty. */
 	r.x = 0;
 	r.y = 0;
-	r.height = win.ch;
+	r.height = height;
 	r.width = width;
 	XftDrawSetClipRectangles(xw.draw, winx, winy, &r, 1);
+
+        /* only render shadow for dark backgrounds, it looks wierd when bg is light */
+        if (bg->color.red < 0x6660 && bg->color.green < 0x6660 && bg->color.blue < 0x6660) {
+          // FIXME: hackish way to move the rendering
+          for (int i = 0; i < len; i++) {
+            specs[i].x += shadowx;
+            specs[i].y += shadowy;
+          }
+          XftDrawGlyphFontSpec(xw.draw, &shadow, specs, len);
+          for (int i = 0; i < len; i++) {
+            specs[i].x -= shadowx;
+            specs[i].y -= shadowy;
+          }
+        }
+
 
 	/* Render the glyphs. */
 	XftDrawGlyphFontSpec(xw.draw, fg, specs, len);
