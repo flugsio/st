@@ -5,7 +5,7 @@
  *
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
-static char font[] = "Ubuntu Mono:pixelsize=17:antialias=false:autohint=false";
+static char font[] = "Ubuntu Mono:pixelsize=17:antialias=true:autohint=true";
 static int borderpx = 0;
 static char shell[] = "/bin/sh";
 static char *utmp = NULL;
@@ -116,7 +116,8 @@ static Shortcut shortcuts[] = {
 	{ XK_ANY_MOD,           XK_Print,       printsel,       {.i =  0} },
 	{ MODKEY|ShiftMask,     XK_Prior,       xzoom,          {.i = +1} },
 	{ MODKEY|ShiftMask,     XK_Next,        xzoom,          {.i = -1} },
-	{ MODKEY|ShiftMask,     XK_Home,        xzoomreset,     {.i =  0} },
+	{ MODKEY|ShiftMask,     XK_Home,        xzoom,          {.i =+17} },
+	{ MODKEY|ShiftMask,     XK_End,         xzoom,          {.i =-17} },
 	{ ShiftMask,            XK_Insert,      selpaste,       {.i =  0} },
 	{ MODKEY|ShiftMask,     XK_Insert,      clippaste,      {.i =  0} },
 	{ MODKEY,               XK_Num_Lock,    numlock,        {.i =  0} },
