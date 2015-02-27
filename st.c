@@ -3216,8 +3216,8 @@ xdraws(char *s, Glyph base, int x, int y, int charlen, int bytelen) {
 	FcPattern *fcpattern, *fontpattern;
 	FcFontSet *fcsets[] = { NULL };
 	FcCharSet *fccharset;
-	Color *fg, *bg, *temp, revfg, revbg, truefg, truebg;
-	XRenderColor colfg, colbg;
+	Color *fg, *bg, *temp, revfg, revbg, truefg, truebg, shadow;
+	XRenderColor colfg, colbg, colshadow;
 	XRectangle r;
 	int oneatatime;
 
@@ -3309,6 +3309,12 @@ xdraws(char *s, Glyph base, int x, int y, int charlen, int bytelen) {
 		bg = temp;
 	}
 
+	colshadow.alpha = 0xffff;
+	colshadow.red = 0x03;
+	colshadow.green = 0x03;
+	colshadow.blue = 0x03;
+	XftColorAllocValue(xw.dpy, xw.vis, xw.cmap, &colshadow, &shadow);
+
 	if(base.mode & ATTR_FAINT && !(base.mode & ATTR_BOLD)) {
 		colfg.red = fg->color.red / 2;
 		colfg.green = fg->color.green / 2;
@@ -3373,6 +3379,15 @@ xdraws(char *s, Glyph base, int x, int y, int charlen, int bytelen) {
 			}
 
 			if(u8fl > 0) {
+				// It was like that when I got here.
+				// only draws shadow for dark backgrounds
+				if(bg->color.red < 0x6660 && bg->color.green < 0x6660 && bg->color.blue < 0x6660) {
+					XftDrawStringUtf8(xw.draw, &shadow,
+							font->match, xp + 1,
+							winy + font->ascent + 1,
+							(FcChar8 *)u8fs,
+							u8fblen);
+				}
 				XftDrawStringUtf8(xw.draw, fg,
 						font->match, xp,
 						winy + font->ascent,
@@ -3444,6 +3459,11 @@ xdraws(char *s, Glyph base, int x, int y, int charlen, int bytelen) {
 			FcCharSetDestroy(fccharset);
 		}
 
+		if(bg->color.red < 0x6660 && bg->color.green < 0x6660 && bg->color.blue < 0x6660) {
+			XftDrawStringUtf8(xw.draw, &shadow, frc[i].font,
+					xp + 1, winy + frc[i].font->ascent + 1,
+					(FcChar8 *)u8c, u8cblen);
+		}
 		XftDrawStringUtf8(xw.draw, fg, frc[i].font,
 				xp, winy + frc[i].font->ascent,
 				(FcChar8 *)u8c, u8cblen);
