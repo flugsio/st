@@ -1398,6 +1398,8 @@ xdrawglyphfontspecs(XftGlyphFontSpec *specs, Glyph base, int len, int x, int y)
 
 	/* Reset clip to none. */
 	XftDrawSetClip(xw.draw, 0);
+	XCopyArea(xw.dpy, xw.buf, xw.win, dc.gc, winx, winy, width,
+			height, winx, winy);
 }
 
 void
@@ -1511,6 +1513,13 @@ xdrawcursor(void)
 				win.cw, 1);
 	}
 	oldx = curx, oldy = term.c.y;
+        XCopyArea(xw.dpy, xw.buf, xw.win, dc.gc,
+            borderpx + curx * win.cw,
+            borderpx + term.c.y * win.ch,
+            win.cw, win.ch,
+            borderpx + curx * win.cw,
+            borderpx + term.c.y * win.ch);
+
 }
 
 void
@@ -1539,8 +1548,6 @@ void
 draw(void)
 {
 	drawregion(0, 0, term.col, term.row);
-	XCopyArea(xw.dpy, xw.buf, xw.win, dc.gc, 0, 0, win.w,
-			win.h, 0, 0);
 	XSetForeground(xw.dpy, dc.gc,
 			dc.col[IS_SET(MODE_REVERSE)?
 				defaultfg : defaultbg].pixel);
