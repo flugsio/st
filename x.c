@@ -1828,6 +1828,12 @@ run(void)
 		if (ev.type == ConfigureNotify) {
 			w = ev.xconfigure.width;
 			h = ev.xconfigure.height;
+                        /*
+                         * Don't wait for window to be mapped.
+                         * It conflicts and pauses forever with i3wm rule:
+                         * for_window X move scratchpad
+                         */
+			break;
 		}
 	} while (ev.type != MapNotify);
 
