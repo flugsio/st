@@ -228,6 +228,18 @@ static char *opt_line  = NULL;
 static char *opt_name  = NULL;
 static char *opt_title = NULL;
 
+void XftDrawGlyphFontSpec2(Color *fg, XftGlyphFontSpec *specs, int len) {
+  XftDrawGlyphFontSpec(xw.draw, fg, specs2, len);
+  XftGlyphFontSpec specs2[len]; 
+  memcpy(specs2, specs, sizeof(specs2));
+  for (int i = 0; i < len; i++) {
+    if (specs2[i].glyph > 66 && specs2[i].glyph < 94) {
+      specs2[i].glyph = specs2[i].glyph - 32;
+    }
+  }
+  XftDrawGlyphFontSpec(xw.draw, fg, specs2, len);
+}
+
 void
 clipcopy(const Arg *dummy)
 {
@@ -1247,12 +1259,15 @@ void
 xdrawglyphfontspecs(XftGlyphFontSpec *specs, Glyph base, int len, int x, int y)
 {
 	int charlen = len * ((base.mode & ATTR_WIDE) ? 2 : 1);
+        /* int shadowx = 3, shadowy = 3; */
         int shadowx = 1, shadowy = 1;
+        int glowx = 3, glowy = 3;
+        int blackx = 1, blacky = 1;
 	int winx = borderpx + x * win.cw, winy = borderpx + y * win.ch,
 	    width = charlen * win.cw + shadowx,
             height = win.ch + shadowy;
-	Color *fg, *bg, *temp, revfg, revbg, truefg, truebg, shadow;
-	XRenderColor colfg, colbg, colshadow;
+	Color *fg, *bg, *temp, revfg, revbg, truefg, truebg, shadow, glow, black;
+	XRenderColor colfg, colbg, colshadow, colglow, colblack;
 	XRectangle r;
 
         colshadow.alpha = 0xffff;
@@ -1374,16 +1389,109 @@ xdrawglyphfontspecs(XftGlyphFontSpec *specs, Glyph base, int len, int x, int y)
             specs[i].x += shadowx;
             specs[i].y += shadowy;
           }
-          XftDrawGlyphFontSpec(xw.draw, &shadow, specs, len);
+          XftDrawGlyphFontSpec2(&shadow, specs, len);
           for (int i = 0; i < len; i++) {
             specs[i].x -= shadowx;
             specs[i].y -= shadowy;
           }
+
+
+        colglow.alpha = 0xffff;
+        colglow.red = fg->color.red * 0.4;
+        colglow.green = fg->color.green * 0.4;
+        colglow.blue = fg->color.blue * 0.4;
+        XftColorAllocValue(xw.dpy, xw.vis, xw.cmap, &colglow, &glow);
+
+        // glow
+          for (int i = 0; i < len; i++) {
+            if (specs[i].glyph > 34 && specs[i].glyph < 67) {
+            specs[i].x -= glowx;
+            specs[i].y -= glowy;
+            }
+          }
+          XftDrawGlyphFontSpec2(&glow, specs, len);
+          for (int i = 0; i < len; i++) {
+            if (specs[i].glyph > 34 && specs[i].glyph < 67) {
+            specs[i].x += glowx*2;
+            }
+          }
+          XftDrawGlyphFontSpec2(&glow, specs, len);
+          for (int i = 0; i < len; i++) {
+            if (specs[i].glyph > 34 && specs[i].glyph < 67) {
+            specs[i].y += glowy*2;
+            }
+          }
+          XftDrawGlyphFontSpec2(&glow, specs, len);
+          for (int i = 0; i < len; i++) {
+            if (specs[i].glyph > 34 && specs[i].glyph < 67) {
+            specs[i].x -= glowy*2;
+            }
+          }
+          XftDrawGlyphFontSpec2(&glow, specs, len);
+          for (int i = 0; i < len; i++) {
+            if (specs[i].glyph > 34 && specs[i].glyph < 67) {
+            specs[i].x += glowx;
+            specs[i].y -= glowy;
+            }
+          }
+
+
+        colblack.alpha = 0xffff;
+        colblack.red = 0x00;
+        colblack.green = 0x00;
+        colblack.blue = 0x00;
+        /* colblack.alpha = 0xffff; */
+        /* colblack.red = fg->color.red * 0.2; */
+        /* colblack.green = fg->color.green * 0.2; */
+        /* colblack.blue = fg->color.blue * 0.2; */
+        XftColorAllocValue(xw.dpy, xw.vis, xw.cmap, &colblack, &black);
+        // border
+          for (int i = 0; i < len; i++) {
+            if (specs[i].glyph > 34 && specs[i].glyph < 67) {
+            specs[i].x -= blackx;
+            specs[i].y -= blacky;
+            }
+          }
+          XftDrawGlyphFontSpec2(&black, specs, len);
+          for (int i = 0; i < len; i++) {
+            if (specs[i].glyph > 34 && specs[i].glyph < 67) {
+            specs[i].x += blackx*2;
+            }
+          }
+          XftDrawGlyphFontSpec2(&black, specs, len);
+          for (int i = 0; i < len; i++) {
+            if (specs[i].glyph > 34 && specs[i].glyph < 67) {
+            specs[i].y += blacky*2;
+            }
+          }
+          XftDrawGlyphFontSpec2(&black, specs, len);
+          for (int i = 0; i < len; i++) {
+            if (specs[i].glyph > 34 && specs[i].glyph < 67) {
+            specs[i].x -= blacky*2;
+            }
+          }
+          XftDrawGlyphFontSpec2(&black, specs, len);
+          for (int i = 0; i < len; i++) {
+            if (specs[i].glyph > 34 && specs[i].glyph < 67) {
+            specs[i].x += blackx;
+            specs[i].y -= blacky;
+            }
+          }
+
         }
 
-
 	/* Render the glyphs. */
-	XftDrawGlyphFontSpec(xw.draw, fg, specs, len);
+        for (int i = 0; i < len; i++) {
+          if (specs[i].glyph > 34 && specs[i].glyph < 67) {
+            specs[i].y -= 2;
+          }
+        }
+	XftDrawGlyphFontSpec2(fg, specs, len);
+        for (int i = 0; i < len; i++) {
+          if (specs[i].glyph > 34 && specs[i].glyph < 67) {
+            specs[i].y += 2;
+          }
+        }
 
 	/* Render underline and strikethrough. */
 	if (base.mode & ATTR_UNDERLINE) {
